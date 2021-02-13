@@ -37,7 +37,7 @@
                         </tr>
                     </tbody>
                     <tfoot>
-                        <!-- <tr>
+                        <tr>
                             <th colspan="2">Subtotal</th>
                             <td>Rp {{ subtotal }}</td>
                         </tr>
@@ -48,7 +48,7 @@
                         <tr>
                             <th colspan="2">Total</th>
                             <td>Rp {{ total }}</td>
-                        </tr> -->
+                        </tr>
                     </tfoot>
                 </table>
             </div>
@@ -59,8 +59,18 @@
 <script>
 export default {
     name: "Summary",
+    props: ["courier"],
     data() {
-        return {};
+        return {
+            subtotal: 200000
+        };
+    },
+
+    computed: {
+        total() {
+            const cost = this.courier ? this.courier.cost : 0;
+            return parseFloat(this.subtotal) + parseFloat(cost);
+        }
     }
 };
 </script>

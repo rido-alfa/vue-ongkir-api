@@ -50,12 +50,12 @@
                                             >Provinsi</label>
                                             <select
                                                 v-model="province_id"
-                                                @change="getCities"
+                                                @change="getCity"
                                                 class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                             >
                                                 <option>Pilih Provinsi</option>
                                                 <option
-                                                    v-for="item in provinces"
+                                                    v-for="item in getAllProvince"
                                                     :key="item.id"
                                                     :value="item.id"
                                                 >{{ item.name }}</option>
@@ -67,13 +67,13 @@
                                                 class="block text-sm font-medium text-gray-700"
                                             >Kota/Kabupaten</label>
                                             <select
-                                                @change="getDistricts"
+                                                @change="getDistrict"
                                                 v-model="city_id"
                                                 class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                             >
                                                 <option>Pilih Kota/Kabupaten</option>
                                                 <option
-                                                    v-for="item in cities"
+                                                    v-for="item in getAllCities"
                                                     :key="item.id"
                                                     :value="item.id"
                                                 >{{ item.name }}</option>
@@ -91,7 +91,7 @@
                                             >
                                                 <option>Pilih Kecamatan</option>
                                                 <option
-                                                    v-for="item in districts"
+                                                    v-for="item in getAllDisctricts"
                                                     :key="item.id"
                                                     :value="item.id"
                                                 >{{ item.name }}</option>
@@ -103,14 +103,16 @@
                                                 class="block text-sm font-medium text-gray-700"
                                             >Kurir</label>
                                             <select
+                                                v-model="courier"
                                                 class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                             >
-                                            <option v-for="(item, index) in couriers" :key="index" :value="item">
-                                                {{ item.courier }} {{ item.service }} - Rp. {{ item.cost }}
-                                            </option>
+                                                <option
+                                                    v-for="(item, index) in getAllCouriers"
+                                                    :key="index"
+                                                    :value="item"
+                                                >{{ item.courier }} {{ item.service }} - Rp. {{ item.cost }}</option>
                                             </select>
                                         </div>
-
                                     </div>
                                 </div>
                                 <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
@@ -125,7 +127,7 @@
                 </div>
                 <!-- component summary -->
                 <div>
-                    <Summary />
+                    <Summary :courier="courier" />
                 </div>
                 <!-- end of component summary -->
             </div>
@@ -135,8 +137,9 @@
 
 <script>
 import axios from "axios";
-axios.defaults.headers.common['Access-Control-Allow-Origin'] = '*';
+axios.defaults.headers.common["Access-Control-Allow-Origin"] = "*";
 import Summary from "./components/Summary";
+import { mapGetters, mapActions } from "vuex";
 export default {
     name: "App",
     components: {
@@ -144,114 +147,39 @@ export default {
     },
     data() {
         return {
-            provinces: [],
             province_id: "",
-            cities: [],
             city_id: "",
-            districts: [],
             district_id: "",
-            couriers: [],
             courier: ""
         };
     },
 
+    computed: {
+        ...mapGetters([
+            "getAllProvince",
+            "getAllCities",
+            "getAllDisctricts",
+            "getAllCouriers"
+        ])
+    },
+
     created() {
-        this.getPorvinces();
+        this.fetchProvinces();
     },
 
     methods: {
-        // ambil data provinsi
-        async getPorvinces() {
-            try {
-                const response = await axios.get(
-                    "https://ruangapi.com/api/v1/provinces",
-                    {
-                        headers: {
-                            Authorization: this.$store.state.api_key
-                        }
-                    }
-                );
-                if (response.status === 200) {
-                    this.provinces = response.data.data.results;
-                }
-            } catch (e) {
-                console.log(e);
-            }
+        ...mapActions(["fetchProvinces", "getCities", "getDistricts", "getCouriers"]),
+
+        getCity() {
+            this.getCities(this.province_id);
         },
 
-        // ambil data kota/kabupaten
-        async getCities() {
-            try {
-                const response = await axios.get(
-                    "https://ruangapi.com/api/v1/cities",
-                    {
-                        params: {
-                            province: this.province_id
-                        },
-                        headers: {
-                            Authorization: this.$store.state.api_key
-                        }
-                    }
-                );
-                if (response.status === 200) {
-                    this.cities = response.data.data.results;
-                }
-            } catch (e) {
-                console.log(e);
-            }
+        getDistrict() {
+            this.getDistricts(this.city_id)
         },
 
-        // ambil data kecamatan
-        async getDistricts() {
-            try {
-                const response = await axios.get(
-                    "https://ruangapi.com/api/v1/districts",
-                    {
-                        params: {
-                            city: this.city_id
-                        },
-                        headers: {
-                            Authorization: this.$store.state.api_key
-                        }
-                    }
-                );
-                if (response.status === 200) {
-                    this.districts = response.data.data.results;
-                }
-            } catch (e) {
-                console.log(e);
-            }
-        },
-
-        // kurir
         getCourier() {
-            axios
-                .post(
-                    "https://ruangapi.com/api/v1/shipping",
-                    {
-                        origin: 402, // kota/kabupaten pengirim
-                        destination: this.district_id, // tujuan pengiriman (kecamatan)
-                        weight: 800,
-                        courier: "jnt,tiki"
-                    },
-                    {
-                        headers: {
-                            "Authorization": this.$store.state.api_key,
-                            "Accept": "application/json",
-                            "Content-Type": "application/json"
-                        }
-                    }
-                )
-                .then(result => {
-                    console.log(result);
-                    this.couriers = result.data.data.results
-                })
-                .catch(err => {
-                    console.log(err);
-                });
-            // if (response.status === 200) {
-            //   this.couriers = response.data.data.results;
-            // }
+            this.getCouriers(this.district_id)
         }
     }
 };
