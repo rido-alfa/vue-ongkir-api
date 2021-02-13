@@ -49,14 +49,16 @@
                                                 class="block text-sm font-medium text-gray-700"
                                             >Provinsi</label>
                                             <select
-                                            v-model="province_id"
-                                            @change="getCities"
+                                                v-model="province_id"
+                                                @change="getCities"
                                                 class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                             >
                                                 <option>Pilih Provinsi</option>
-                                                <option v-for="item in provinces" :key="item.id" :value="item.id">
-                                                    {{ item.name }}
-                                                </option>
+                                                <option
+                                                    v-for="item in provinces"
+                                                    :key="item.id"
+                                                    :value="item.id"
+                                                >{{ item.name }}</option>
                                             </select>
                                         </div>
 
@@ -65,17 +67,50 @@
                                                 class="block text-sm font-medium text-gray-700"
                                             >Kota/Kabupaten</label>
                                             <select
-                                            v-model="city_id"
+                                                @change="getDistricts"
+                                                v-model="city_id"
                                                 class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                             >
                                                 <option>Pilih Kota/Kabupaten</option>
-                                                <option v-for="item in cities" :key="item.id" :value="item.id">
-                                                    {{ item.name }}
-                                                </option>
+                                                <option
+                                                    v-for="item in cities"
+                                                    :key="item.id"
+                                                    :value="item.id"
+                                                >{{ item.name }}</option>
                                             </select>
                                         </div>
 
-                                        
+                                        <div class="col-span-6 sm:col-span-3">
+                                            <label
+                                                class="block text-sm font-medium text-gray-700"
+                                            >Kecamatan</label>
+                                            <select
+                                                @change="getCourier"
+                                                v-model="district_id"
+                                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                            >
+                                                <option>Pilih Kecamatan</option>
+                                                <option
+                                                    v-for="item in districts"
+                                                    :key="item.id"
+                                                    :value="item.id"
+                                                >{{ item.name }}</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-span-6 sm:col-span-5">
+                                            <label
+                                                class="block text-sm font-medium text-gray-700"
+                                            >Kurir</label>
+                                            <select
+                                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                            >
+                                            <option v-for="(item, index) in couriers" :key="index" :value="item">
+                                                {{ item.courier }} {{ item.service }} - Rp. {{ item.cost }}
+                                            </option>
+                                            </select>
+                                        </div>
+
                                     </div>
                                 </div>
                                 <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
@@ -100,6 +135,7 @@
 
 <script>
 import axios from "axios";
+axios.defaults.headers.common['Access-Control-Allow-Origin'] = '*';
 import Summary from "./components/Summary";
 export default {
     name: "App",
@@ -113,7 +149,9 @@ export default {
             cities: [],
             city_id: "",
             districts: [],
-            district_id: ""
+            district_id: "",
+            couriers: [],
+            courier: ""
         };
     },
 
@@ -163,7 +201,7 @@ export default {
             }
         },
 
-        //
+        // ambil data kecamatan
         async getDistricts() {
             try {
                 const response = await axios.get(
@@ -183,6 +221,37 @@ export default {
             } catch (e) {
                 console.log(e);
             }
+        },
+
+        // kurir
+        getCourier() {
+            axios
+                .post(
+                    "https://ruangapi.com/api/v1/shipping",
+                    {
+                        origin: 402, // kota/kabupaten pengirim
+                        destination: this.district_id, // tujuan pengiriman (kecamatan)
+                        weight: 800,
+                        courier: "jnt,tiki"
+                    },
+                    {
+                        headers: {
+                            "Authorization": this.$store.state.api_key,
+                            "Accept": "application/json",
+                            "Content-Type": "application/json"
+                        }
+                    }
+                )
+                .then(result => {
+                    console.log(result);
+                    this.couriers = result.data.data.results
+                })
+                .catch(err => {
+                    console.log(err);
+                });
+            // if (response.status === 200) {
+            //   this.couriers = response.data.data.results;
+            // }
         }
     }
 };
